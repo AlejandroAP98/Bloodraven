@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@theme {
+  /* Base — sobrio, fondo gris claro para que el panel blanco destaque */
+  --color-void: #f4f4f5;
+  --color-panel: #ffffff;
+  --color-panel2: #ececed;
+  --color-edge: #d3d4d8;
+  --color-edgehi: #adb0b9;
+  --color-fg: #101013;
+  --color-mut: #4c515c;
+  --color-dim: #5e636d;
+
+  /* Señales semánticas — apagadas */
+  --color-acc: #1e2024;
+  --color-blood: #8f1d2f;
+  --color-ok: #1e6b40;
+  --color-warn: #9d4a08;
+  --color-crit: #a62a35;
+
+  --font-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Consolas", monospace;
+}
+
+body {
+  @apply bg-void font-display text-fg;
+  background-image: linear-gradient(rgb(var(--trama) / var(--trama-op)) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--trama) / var(--trama-op)) 1px, transparent 1px);
+  background-size: 36px 36px;
+  background-attachment: fixed;
+}
+
+/* Tema claro (predeterminado): tokens de @theme + valores para canvas/trama */
+:root {
+  --trama: 16 16 19;
+  --trama-op: 0.045;
+  --graf-bar: 30 32 36;
+  --graf-crit: 166 42 53;
+  --graf-mut: 76 81 92;
+  --graf-ok: 30 107 64;
+  --graf-grid: #e4e5e8;
+  --graf-axis: #5e636d;
+}
+
+/* Tema oscuro: la clase .dark en <html> revierte los tokens */
+.dark {
+  color-scheme: dark;
+  --color-void: #121316;
+  --color-panel: #191b1f;
+  --color-panel2: #22252a;
+  --color-edge: #2c2f35;
+  --color-edgehi: #6d727c;
+  --color-fg: #e6e8ec;
+  --color-mut: #9aa1ac;
+  --color-dim: #8a91a0;
+
+  --color-acc: #dfe1e6;
+  --color-blood: #d1546a;
+  --color-ok: #5aaf80;
+  --color-warn: #cf8b40;
+  --color-crit: #d06a75;
+
+  --trama: 230 232 236;
+  --trama-op: 0.04;
+  --graf-bar: 230 232 236;
+  --graf-crit: 208 106 117;
+  --graf-mut: 154 161 172;
+  --graf-ok: 90 175 128;
+  --graf-grid: #26292e;
+  --graf-axis: #9aa1ac;
+}
+
+/* Marcas de esquina para paneles técnicos */
+.tick {
+  position: relative;
+}
+.tick::before,
+.tick::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  border: 0 solid var(--color-edgehi);
+}
+.tick::before {
+  top: -1px;
+  left: -1px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.tick::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+.tick-acc::before,
+.tick-acc::after {
+  border-color: var(--color-acc);
+}
+
+/* Campos de formulario */
+.inp {
+  @apply w-full bg-void px-3 py-2 font-mono text-sm text-fg ring-1 ring-edgehi outline-none transition-shadow focus:ring-acc/60;
+  caret-color: var(--color-acc);
+}
+
+/* Terminal */
+.term {
+  @apply bg-void font-mono text-xs leading-6;
+}
+
+/* cursor pointer en elementos interactivos */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+summary,
+select {
+  cursor: pointer;
+}
+
+/* iconos de los botones: al pasar el ratón se pintan del rojo del raven */
+button:hover:not(:disabled) .ico,
+[role="button"]:hover .ico,
+label:hover .ico {
+  color: var(--color-blood);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-edgehi) transparent;
+}
+
+:focus-visible {
+  outline: 1px solid var(--color-acc);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

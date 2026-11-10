@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+static/
+node_modules/
+logs/
+credencial_clave.key
+
+# herramientas de agente (no son del proyecto)
+.agents/
+skills-lock.json
+
+# sistema
+Thumbs.db
+.DS_Store
+desktop.ini

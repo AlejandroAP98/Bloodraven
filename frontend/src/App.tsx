@@ -1,0 +1,387 @@
+import { useEffect, useState } from "react";
+
+import { api } from "./api";
+import type { DispOut, Disp24h, Estado, Regla } from "./api";
+import { BotonCopiar } from "./BotonCopiar";
+import { Detalle } from "./Detalle";
+import { FormDispositivo } from "./FormDispositivo";
+import { Comparativa } from "./Comparativa";
+import { Descubrimiento } from "./Descubrimiento";
+import { EquiposRed } from "./EquiposRed";
+import { Topologia } from "./Topologia";
+import { PruebaRapida } from "./PruebaRapida";
+import { Modulos, type Vista } from "./Modulos";
+
+const LED: Record<string, string> = {
+  ok: "bg-ok shadow-[0_0_6px] shadow-ok/70",
+  degradado: "bg-warn shadow-[0_0_6px] shadow-warn/70",
+  down: "bg-crit animate-pulse shadow-[0_0_6px] shadow-crit/80",
+};
+const BORDE: Record<string, string> = { ok: "border-l-ok", degradado: "border-l-warn", down: "border-l-crit" };
+const BADGE: Record<string, string> = {
+  ok: "border-ok/40 text-ok",
+  degradado: "border-warn/40 text-warn",
+  down: "border-crit/50 text-crit",
+};
+const ESTADO_TXT: Record<string, string> = { ok: "OK", degradado: "DEGRADADO", down: "DOWN" };
+
+type Tema = "claro" | "oscuro";
+
+function temaInicial(): Tema {
+  const guardado = localStorage.getItem("tema");
+  if (guardado === "claro" || guardado === "oscuro") return guardado;
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro";
+}
+
+function colDispo(pct: number | undefined | null): string {
+  if (pct == null) return "text-dim";
+  if (pct >= 99) return "text-ok";
+  if (pct >= 95) return "text-warn";
+  return "text-crit";
+}
+
+function Reloj() {
+  const [ahora, setAhora] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setAhora(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const hh = String(ahora.getHours()).padStart(2, "0");
+  const mm = String(ahora.getMinutes()).padStart(2, "0");
+  const ss = String(ahora.getSeconds()).padStart(2, "0");
+  return (
+    <span className="font-mono text-xs text-mut">
+      {hh}
+      <span className="animate-pulse text-dim">:</span>
+      {mm}
+      <span className="animate-pulse text-dim">:</span>
+      {ss}
+    </span>
+  );
+}
+
+function Marca() {
+  return (
+    <span className="text-blood" aria-hidden>
+      <svg role="img" viewBox="0 0 587 717" className="h-12 w-12" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden>
+        <title>Raven — Bloodraven</title>
+        <path d="M 403,103 L 401,103 L 398,101 L 395,101 L 394,100 L 391,100 L 390,99 L 387,99 L 386,98 L 383,98 L 382,97 L 378,97 L 377,96 L 374,96 L 373,95 L 369,95 L 368,94 L 333,94 L 332,93 L 330,93 L 327,91 L 322,90 L 319,88 L 314,87 L 309,84 L 305,84 L 304,83 L 300,83 L 299,82 L 291,82 L 290,81 L 275,81 L 274,82 L 266,82 L 265,83 L 260,83 L 259,84 L 254,84 L 253,85 L 251,85 L 250,86 L 248,86 L 247,87 L 242,88 L 241,89 L 240,89 L 239,90 L 232,93 L 230,95 L 229,95 L 227,97 L 226,97 L 219,104 L 218,104 L 208,114 L 208,115 L 201,122 L 201,123 L 197,127 L 197,128 L 194,131 L 194,132 L 192,134 L 192,135 L 188,140 L 188,141 L 187,142 L 188,142 L 190,140 L 191,141 L 191,142 L 188,145 L 188,146 L 185,149 L 185,150 L 183,152 L 183,153 L 180,156 L 179,159 L 177,161 L 177,162 L 175,164 L 174,167 L 172,169 L 172,170 L 171,171 L 171,172 L 170,173 L 170,174 L 169,175 L 169,176 L 164,185 L 165,185 L 166,186 L 166,187 L 164,189 L 164,190 L 160,195 L 158,200 L 156,202 L 156,204 L 154,206 L 154,207 L 153,208 L 153,210 L 155,208 L 156,209 L 156,211 L 153,216 L 153,218 L 152,219 L 152,220 L 151,221 L 151,222 L 150,223 L 147,230 L 144,233 L 143,233 L 141,235 L 138,236 L 136,238 L 135,238 L 133,240 L 132,240 L 130,242 L 129,242 L 126,245 L 125,245 L 118,252 L 119,252 L 120,253 L 114,258 L 113,258 L 109,262 L 108,262 L 97,273 L 97,274 L 94,277 L 94,278 L 90,283 L 90,284 L 87,289 L 87,291 L 86,292 L 86,294 L 85,295 L 85,300 L 84,301 L 84,329 L 85,330 L 85,337 L 86,338 L 86,343 L 87,344 L 87,347 L 88,348 L 88,351 L 89,352 L 89,355 L 90,356 L 90,359 L 92,362 L 92,365 L 94,368 L 94,370 L 96,373 L 96,375 L 97,376 L 97,377 L 98,378 L 98,379 L 99,380 L 99,381 L 100,382 L 103,389 L 105,391 L 106,394 L 108,396 L 108,397 L 110,399 L 110,400 L 111,401 L 111,404 L 112,405 L 112,423 L 113,424 L 113,433 L 114,434 L 114,439 L 115,440 L 115,444 L 116,445 L 116,450 L 117,451 L 117,454 L 118,455 L 118,458 L 119,459 L 119,462 L 120,463 L 120,466 L 121,467 L 121,469 L 122,470 L 122,472 L 123,473 L 123,476 L 125,479 L 125,481 L 126,482 L 126,484 L 129,489 L 129,491 L 130,492 L 130,493 L 131,494 L 134,501 L 136,503 L 137,506 L 139,508 L 140,511 L 143,514 L 143,515 L 146,518 L 146,519 L 153,526 L 153,527 L 154,528 L 155,528 L 162,535 L 163,535 L 168,539 L 167,538 L 166,535 L 164,533 L 164,532 L 162,530 L 162,529 L 160,527 L 160,526 L 156,521 L 156,520 L 157,519 L 160,522 L 161,522 L 166,526 L 167,526 L 168,527 L 169,527 L 178,532 L 180,532 L 183,534 L 185,534 L 186,535 L 189,535 L 190,536 L 192,536 L 191,536 L 189,534 L 188,534 L 186,532 L 185,532 L 178,526 L 179,525 L 180,525 L 186,529 L 188,529 L 189,530 L 190,530 L 191,531 L 193,531 L 194,532 L 197,532 L 197,531 L 191,525 L 191,524 L 189,522 L 189,521 L 187,519 L 187,518 L 185,515 L 186,514 L 187,514 L 188,515 L 189,515 L 190,516 L 192,516 L 195,518 L 199,518 L 200,519 L 204,519 L 206,521 L 206,522 L 208,525 L 209,530 L 210,531 L 210,535 L 211,536 L 211,540 L 212,541 L 212,544 L 213,545 L 213,549 L 214,550 L 214,554 L 215,555 L 215,557 L 216,558 L 216,561 L 217,562 L 218,567 L 220,570 L 220,572 L 221,573 L 221,574 L 223,577 L 223,579 L 224,580 L 224,592 L 223,593 L 223,597 L 222,598 L 222,601 L 221,602 L 221,605 L 220,606 L 220,609 L 219,610 L 219,612 L 218,613 L 218,615 L 217,616 L 217,619 L 216,620 L 216,622 L 215,623 L 215,625 L 214,626 L 214,628 L 213,629 L 213,631 L 212,632 L 212,634 L 211,635 L 210,640 L 209,641 L 209,642 L 208,643 L 208,645 L 206,648 L 206,650 L 205,651 L 204,654 L 202,656 L 202,657 L 201,658 L 199,663 L 197,665 L 196,668 L 194,670 L 188,670 L 187,671 L 186,671 L 184,673 L 184,675 L 183,676 L 174,676 L 173,675 L 168,675 L 165,673 L 163,673 L 162,672 L 160,672 L 159,671 L 154,671 L 153,672 L 152,672 L 148,676 L 148,677 L 147,678 L 147,680 L 146,681 L 143,681 L 142,682 L 140,682 L 139,683 L 138,683 L 136,685 L 136,686 L 134,688 L 134,689 L 133,690 L 133,693 L 136,690 L 137,690 L 139,688 L 140,688 L 141,687 L 145,687 L 146,688 L 146,690 L 147,690 L 147,686 L 148,685 L 148,684 L 152,680 L 158,680 L 164,686 L 165,686 L 166,687 L 168,687 L 169,688 L 185,688 L 190,693 L 190,687 L 191,686 L 194,686 L 195,687 L 194,688 L 194,689 L 193,690 L 193,692 L 192,693 L 192,699 L 193,698 L 195,693 L 201,687 L 202,687 L 205,685 L 207,685 L 208,684 L 216,684 L 217,685 L 217,688 L 220,691 L 228,691 L 229,690 L 231,690 L 232,689 L 233,689 L 238,685 L 243,685 L 244,686 L 249,686 L 250,687 L 256,687 L 257,688 L 260,688 L 262,690 L 263,690 L 269,696 L 269,697 L 270,698 L 270,700 L 270,696 L 271,695 L 271,691 L 273,689 L 279,689 L 280,688 L 286,688 L 287,687 L 296,687 L 297,686 L 316,686 L 317,687 L 319,687 L 320,688 L 325,688 L 326,687 L 327,687 L 330,684 L 330,681 L 331,680 L 331,677 L 330,676 L 330,675 L 331,674 L 338,674 L 339,675 L 342,676 L 348,682 L 348,683 L 350,686 L 350,688 L 351,689 L 351,693 L 352,692 L 352,688 L 353,687 L 353,680 L 352,679 L 352,676 L 351,675 L 351,673 L 346,667 L 345,667 L 340,664 L 338,664 L 337,663 L 333,663 L 332,664 L 329,664 L 328,665 L 325,666 L 322,669 L 321,669 L 320,670 L 317,670 L 316,671 L 314,671 L 313,672 L 305,672 L 304,671 L 304,669 L 305,668 L 305,665 L 306,664 L 306,662 L 307,661 L 307,659 L 308,658 L 308,656 L 309,655 L 309,653 L 310,652 L 310,650 L 311,649 L 312,644 L 314,641 L 315,636 L 317,633 L 318,628 L 319,627 L 319,626 L 320,625 L 320,624 L 321,623 L 321,622 L 322,621 L 325,614 L 327,612 L 327,611 L 329,609 L 329,608 L 331,606 L 331,605 L 333,603 L 333,602 L 335,600 L 335,599 L 337,597 L 337,596 L 340,593 L 340,592 L 345,587 L 346,587 L 347,588 L 349,588 L 350,589 L 352,589 L 355,591 L 357,591 L 358,592 L 360,592 L 361,593 L 363,593 L 364,594 L 369,595 L 370,596 L 373,596 L 374,597 L 377,597 L 378,598 L 380,598 L 381,599 L 385,599 L 386,600 L 390,600 L 391,601 L 395,601 L 396,602 L 401,602 L 402,603 L 411,603 L 412,604 L 440,604 L 441,603 L 449,603 L 450,602 L 455,602 L 456,601 L 459,601 L 460,600 L 462,600 L 463,599 L 472,599 L 474,597 L 475,598 L 476,598 L 477,597 L 479,597 L 479,596 L 481,594 L 482,595 L 483,594 L 486,594 L 486,593 L 487,592 L 490,592 L 491,591 L 493,591 L 493,589 L 494,588 L 497,588 L 498,589 L 499,588 L 502,588 L 502,586 L 500,584 L 501,583 L 508,583 L 509,582 L 509,581 L 508,580 L 509,579 L 517,579 L 518,578 L 517,575 L 515,573 L 516,572 L 522,572 L 523,571 L 524,571 L 525,570 L 525,569 L 523,566 L 524,565 L 533,565 L 533,564 L 534,563 L 533,562 L 533,561 L 527,555 L 524,554 L 522,552 L 519,551 L 517,549 L 516,549 L 515,548 L 512,547 L 510,545 L 503,542 L 501,540 L 496,538 L 494,536 L 491,535 L 489,533 L 484,531 L 482,529 L 477,527 L 475,525 L 472,524 L 470,522 L 467,521 L 465,519 L 460,517 L 458,515 L 457,515 L 456,514 L 455,514 L 453,512 L 450,511 L 448,509 L 447,509 L 442,505 L 439,504 L 437,502 L 434,501 L 431,498 L 430,498 L 428,496 L 427,496 L 425,494 L 424,494 L 422,492 L 421,492 L 418,489 L 417,489 L 415,487 L 414,487 L 408,481 L 407,481 L 398,472 L 398,471 L 393,466 L 393,465 L 390,462 L 390,461 L 386,456 L 386,455 L 381,446 L 381,444 L 382,443 L 385,446 L 386,446 L 388,448 L 389,448 L 391,450 L 392,450 L 393,451 L 396,451 L 398,449 L 398,439 L 397,438 L 397,435 L 396,434 L 396,431 L 395,430 L 395,428 L 394,427 L 394,426 L 395,425 L 396,426 L 397,426 L 399,428 L 400,428 L 402,426 L 402,422 L 401,421 L 401,417 L 400,416 L 400,414 L 399,413 L 399,410 L 398,409 L 398,407 L 397,406 L 397,404 L 396,403 L 395,398 L 392,393 L 392,380 L 391,379 L 391,374 L 390,373 L 390,370 L 389,369 L 389,366 L 388,365 L 388,363 L 387,362 L 386,357 L 384,354 L 384,352 L 382,349 L 381,344 L 379,341 L 378,336 L 376,333 L 376,331 L 375,330 L 375,329 L 374,328 L 374,326 L 372,323 L 372,321 L 371,320 L 370,315 L 369,314 L 369,313 L 368,312 L 368,310 L 365,305 L 365,303 L 364,302 L 361,295 L 359,293 L 357,288 L 355,286 L 355,285 L 353,283 L 353,282 L 351,280 L 351,279 L 349,277 L 349,276 L 345,272 L 345,271 L 338,264 L 338,263 L 337,262 L 336,262 L 335,261 L 335,260 L 334,259 L 333,259 L 328,254 L 328,251 L 327,250 L 327,241 L 326,240 L 326,235 L 325,234 L 325,229 L 324,228 L 324,224 L 323,223 L 323,220 L 322,219 L 322,214 L 321,213 L 321,187 L 322,186 L 322,182 L 323,181 L 323,179 L 324,178 L 324,176 L 325,175 L 326,170 L 327,169 L 328,166 L 332,161 L 332,160 L 341,151 L 342,151 L 345,148 L 348,147 L 350,145 L 352,145 L 353,144 L 354,144 L 356,146 L 357,146 L 357,144 L 358,143 L 359,144 L 361,144 L 362,145 L 363,145 L 362,144 L 363,143 L 364,143 L 365,144 L 367,144 L 365,142 L 366,141 L 376,141 L 377,140 L 385,140 L 386,139 L 392,139 L 393,138 L 398,138 L 399,137 L 403,137 L 404,136 L 407,136 L 408,135 L 411,135 L 412,134 L 415,134 L 416,133 L 419,133 L 420,132 L 422,132 L 423,131 L 426,131 L 427,130 L 429,132 L 432,133 L 432,131 L 431,130 L 429,125 L 425,120 L 425,119 L 417,111 L 416,111 L 411,107 L 410,107 Z" />
+      </svg>
+    </span>
+  );
+}
+
+export default function App() {
+  const [tema, setTema] = useState<Tema>(temaInicial);
+  const [estados, setEstados] = useState<Estado[]>([]);
+  const [dispositivos, setDispositivos] = useState<DispOut[]>([]);
+  const [sel, setSel] = useState<string | null>(null);
+  const [vista, setVista] = useState<"lista" | Vista>("lista");
+  const [form, setForm] = useState<{
+    abierto: boolean;
+    inicial: DispOut | null;
+    prefill: { nombre: string; host: string } | null;
+  }>({ abierto: false, inicial: null, prefill: null });
+  const [disp24, setDisp24] = useState<Record<string, Disp24h>>({});
+  const [error, setError] = useState("");
+  // pestaña dedicada de prueba rápida (?prueba=<host>), independiente del detalle ?d=
+  const [selPrueba, setSelPrueba] = useState<string | null>(null);
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setSel(p.get("d") ?? null);
+    setSelPrueba(p.has("prueba") ? (p.get("prueba") ?? "") : null);
+  }, []);
+
+  // título propio de la pestaña dedicada
+  useEffect(() => {
+    if (selPrueba == null) return;
+    const base = "Bloodraven";
+    document.title = selPrueba ? `${base} · prueba rápida ${selPrueba}` : `${base} · prueba rápida`;
+    return () => {
+      document.title = base;
+    };
+  }, [selPrueba]);
+
+  // aplica el tema y lo recuerda
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", tema === "oscuro");
+    try {
+      localStorage.setItem("tema", tema);
+    } catch {
+      /* sin persistencia: no pasa nada */
+    }
+  }, [tema]);
+
+  useEffect(() => {
+    let vivo = true;
+    const tick = async () => {
+      try {
+        const [e, d] = await Promise.all([api.estado(), api.dispositivos()]);
+        if (!vivo) return;
+        setEstados(e.dispositivos);
+        setDispositivos(d);
+        setError("");
+      } catch (err) {
+        setError(String(err));
+      }
+    };
+    tick();
+    const t = setInterval(tick, 5000);
+    return () => {
+      vivo = false;
+      clearInterval(t);
+    };
+  }, []);
+
+  // resumen 24h (disponibilidad / caídas) por dispositivo, refresco lento
+  useEffect(() => {
+    let vivo = true;
+    const cargar = async () => {
+      try {
+        const res = await api.disponibilidad(24);
+        if (!vivo) return;
+        setDisp24(Object.fromEntries(res.map((r) => [r.device_id, r])));
+      } catch {
+        /* silencio: el listado sigue vivo sin este panel */
+      }
+    };
+    cargar();
+    const t = setInterval(cargar, 60_000);
+    return () => {
+      vivo = false;
+      clearInterval(t);
+    };
+  }, []);
+
+  const seleccionado = dispositivos.find((d) => d.id === sel) ?? null;
+
+  const guardar = async (data: Partial<DispOut>, reglas: Regla[]) => {
+    const guardado = form.inicial
+      ? await api.editar(form.inicial.id, { ...form.inicial, ...data })
+      : await api.crear(data);
+    try {
+      await api.guardarReglas(guardado.id, reglas.filter((r) => r.activo));
+    } catch {
+      /* las reglas son best effort */
+    }
+    setForm({ abierto: false, inicial: null, prefill: null });
+    const d = await api.dispositivos();
+    setDispositivos(d);
+  };
+
+  const eliminarActual = async () => {
+    if (sel && confirm("¿Eliminar dispositivo y todo su histórico?")) {
+      await api.eliminar(sel);
+      setSel(null);
+    }
+  };
+
+  const n = dispositivos.length;
+  const nOk = estados.filter((e) => e.estado === "ok").length;
+  const nDeg = estados.filter((e) => e.estado === "degradado").length;
+  const nDown = estados.filter((e) => e.estado === "down").length;
+
+  return (
+    <div
+      className={
+        selPrueba != null ? "flex h-dvh min-h-0 flex-col gap-5 p-4 sm:p-6" : "mx-auto max-w-[90rem] p-4 sm:p-6"
+      }
+    >
+      {/* la pestaña dedicada de prueba rápida va sin cabecera del panel */}
+      {selPrueba == null && (
+        <header className="mb-6 border-b border-edge pb-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Marca />
+              <div>
+                <h1 className="text-3xl font-bold leading-none tracking-[0.14em] text-fg">
+                  BLOOD<span className="text-blood">RAVEN</span>
+                </h1>
+                <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.28em] text-mut">
+                  supervisión de conectividad
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Reloj />
+              <button
+                onClick={() => setTema(tema === "oscuro" ? "claro" : "oscuro")}
+                title={tema === "oscuro" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+                className="flex items-center gap-2 border border-edge bg-panel px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mut transition-colors hover:border-edgehi hover:text-fg"
+              >
+                <span className="ico">{tema === "oscuro" ? "☀" : "☾"}</span>
+                {tema === "oscuro" ? " claro" : " oscuro"}
+              </button>
+              <span className="flex items-center gap-2 border border-edge bg-panel px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mut">
+                <span className={`h-1.5 w-1.5 ${error ? "bg-crit" : "bg-ok shadow-[0_0_5px] shadow-ok/70"}`} />
+                {error ? "sin enlace" : "en línea"}
+              </span>
+              <button
+                onClick={() => setForm({ abierto: true, inicial: null, prefill: null })}
+                className="border border-acc/50 bg-acc/10 px-4 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.15em] text-acc transition-colors hover:bg-acc/20"
+              >
+                <span className="ico">+</span> Dispositivo
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {error && (
+        <p className="tick mb-4 border border-crit/40 bg-crit/10 p-3 font-mono text-xs text-crit">
+          ▲ error de enlace con el backend — {error}
+        </p>
+      )}
+
+      {selPrueba != null ? (
+        <>
+          <a
+            href={location.pathname}
+            title="volver al panel principal"
+            className="font-mono text-[10px] uppercase tracking-[0.2em] text-mut transition-colors hover:text-fg"
+          >
+            ← volver al panel
+          </a>
+          <PruebaRapida
+            amplicado
+            hostInicial={selPrueba}
+            autoIniciar
+            onAgregar={(h, nombre) =>
+              setForm({
+                abierto: true,
+                inicial: null,
+                prefill: { nombre: nombre ?? `Nodo ${h.split(".").slice(-2).join(".")}`, host: h },
+              })
+            }
+          />
+        </>
+      ) : !seleccionado ? (
+        vista === "comparar" ? (
+          <Comparativa dispositivos={dispositivos} onVolver={() => setVista("lista")} />
+        ) : vista === "descubrir" ? (
+          <Descubrimiento
+            dispositivos={dispositivos}
+            onAgregar={(host) => {
+              setVista("lista");
+              setForm({ abierto: true, inicial: null, prefill: { nombre: `Nodo ${host.split(".").slice(-2).join(".")}`, host } });
+            }}
+            onVolver={() => setVista("lista")}
+          />
+        ) : vista === "catalogo" ? (
+          <EquiposRed onVolver={() => setVista("lista")} />
+        ) : vista === "topologia" ? (
+          <Topologia onVolver={() => setVista("lista")} onVerDevice={(id) => setSel(id)} />
+        ) : (
+          <>
+            <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs text-mut">
+              <span>
+                nodos <span className="text-fg">{n}</span>
+              </span>
+              <span>
+                en línea <span className="text-ok">{nOk}</span>
+              </span>
+              <span>
+                degradados <span className="text-warn">{nDeg}</span>
+              </span>
+              <span>
+                caídos <span className="text-crit">{nDown}</span>
+              </span>
+              <span className="ml-auto text-dim">intervalo de sondeo · 5s</span>
+            </div>
+
+            <Modulos onAbrir={setVista} />
+
+            <div className="mb-3">
+              <PruebaRapida
+                onAgregar={(h, nombre) =>
+                  setForm({
+                    abierto: true,
+                    inicial: null,
+                    prefill: { nombre: nombre ?? `Nodo ${h.split(".").slice(-2).join(".")}`, host: h },
+                  })
+                }
+              />
+            </div>
+
+          <div className="overflow-hidden border border-edge bg-panel">
+            <div className="grid grid-cols-[3.5rem_1fr_6.5rem_6rem_9rem] gap-x-4 border-b border-edge px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.25em] text-dim">
+              <span>Nodo</span>
+              <span>Designación</span>
+              <span className="text-right">Rtt</span>
+              <span className="text-right">24h</span>
+              <span className="text-right">Estado</span>
+            </div>
+            {dispositivos.map((d, i) => {
+              const e = estados.find((x) => x.device_id === d.id);
+              const est = e?.estado ?? "ok";
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => setSel(d.id)}
+                  className={`grid w-full grid-cols-[3.5rem_1fr_6.5rem_6rem_9rem] items-center gap-x-4 border-l-2 px-4 py-3 text-left transition-colors ${BORDE[est]} hover:bg-panel2 ${
+                    i % 2 ? "bg-panel2/40" : ""
+                  }`}
+                >
+                  <span className="font-mono text-xs text-dim">N-{String(i + 1).padStart(2, "0")}</span>
+                  <span className="flex min-w-0 items-baseline gap-3">
+                    <span className="truncate font-medium text-fg">{d.nombre}</span>
+                    <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs text-mut">
+                      {d.host}
+                      <BotonCopiar texto={d.host} />
+                    </span>
+                  </span>
+                  <span className="text-right font-mono text-sm text-fg">
+                    {e?.ultimo_rtt_ms != null ? `${e.ultimo_rtt_ms.toFixed(0)}ms` : "—"}
+                  </span>
+                  <span className={`text-right font-mono text-sm ${colDispo(disp24[d.id]?.disponibilidad_pct)}`}>
+                    {disp24[d.id]?.disponibilidad_pct != null ? (
+                      <>
+                        {disp24[d.id].disponibilidad_pct!.toFixed(1)}%
+                        <span className={disp24[d.id].caidas_n ? "text-crit" : "text-dim"}>
+                          {" "}· {disp24[d.id].caidas_n}
+                        </span>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </span>
+                  <span className="flex items-center justify-end gap-3">
+                    <span className={`h-2 w-2 ${LED[est]}`} />
+                    <span className={`w-24 border px-2 py-0.5 text-right font-mono text-[10px] font-medium tracking-[0.12em] ${BADGE[est]}`}>
+                      {ESTADO_TXT[est]}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {dispositivos.length === 0 && (
+            <div className="mt-3 border border-dashed border-edgehi p-8 text-center">
+              <p className="font-mono text-xs uppercase tracking-[0.25em] text-mut">sector sin asignar</p>
+              <p className="mt-2 text-sm text-dim">Agrega el primer dispositivo con «+ Dispositivo».</p>
+            </div>
+          )}
+        </>
+        )
+      ) : (
+        <Detalle
+          dispositivo={seleccionado}
+          estados={estados}
+          onVolver={() => setSel(null)}
+          onEditar={() => setForm({ abierto: true, inicial: seleccionado, prefill: null })}
+          onEliminar={eliminarActual}
+        />
+      )}
+
+      {form.abierto && (
+        <FormDispositivo
+          inicial={form.inicial}
+          prefill={form.prefill}
+          onGuardar={guardar}
+          onCerrar={() => setForm({ abierto: false, inicial: null, prefill: null })}
+        />
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,14 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+pydantic==2.10.3
+pydantic-settings==2.7.0
+apscheduler==3.10.4
+httpx==0.28.1
+pystray==0.19.5
+pillow==13.0.0
+cryptography==50.0.2
+librouteros==4.2.2
+asyncssh==2.24.1
