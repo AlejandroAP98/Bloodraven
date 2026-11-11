@@ -57,7 +57,7 @@ interface Modulo {
 }
 
 const MODULOS: Modulo[] = [
-  { id: "comparar", etiqueta: "Comparar", descripcion: "superpone la latencia de hasta 4 nodos", icono: <IconoComparar /> },
+  { id: "comparar", etiqueta: "Comparar", descripcion: "ping en vivo de varias ips al tiempo · latencia de nodos", icono: <IconoComparar /> },
   { id: "descubrir", etiqueta: "Descubrir", descripcion: "barrido icmp + identificación por puertos", icono: <IconoDescubrir /> },
   { id: "catalogo", etiqueta: "Catálogo", descripcion: "inventario de equipos de la red", icono: <IconoCatalogo /> },
   { id: "topologia", etiqueta: "Topología", descripcion: "mapa de la red · rutas y selección", icono: <IconoTopologia /> },

@@ -14,6 +14,7 @@ import type { EChartsOption } from "echarts";
 
 import type { DispOut, PuntoAgg, PuntoRaw } from "./api";
 import { api } from "./api";
+import { ComparadorPing } from "./ComparadorPing";
 import { BSECS, coloresGrafica, hacerRejilla, pares } from "./GraficaLatencia";
 
 echarts.use([
@@ -56,6 +57,7 @@ export function Comparativa({
   const [horas, setHoras] = useState(1);
   const [auto, setAuto] = useState(0);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState<"dispositivos" | "vivo">("vivo");
   const cont = useRef<HTMLDivElement>(null);
   const inst = useRef<ReturnType<typeof echarts.init> | null>(null);
   const kKey = useRef("");
@@ -230,49 +232,75 @@ export function Comparativa({
                     <span className="ico">◂</span> Volver
         </button>
         <h2 className="text-xl font-semibold tracking-[0.06em] text-fg">Comparativa</h2>
-        <span className="font-mono text-xs text-mut">hasta {MAX_SEL} dispositivos · media de cada nodo</span>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {dispositivos.map((d) => (
+        <div className="ml-auto flex border border-edge">
           <button
-            key={d.id}
-            onClick={() => toggle(d.id)}
-            className={`border px-2.5 py-1 font-mono text-xs transition-colors ${
-              sel.includes(d.id) ? "border-acc/60 bg-acc/10 text-acc" : "border-edge bg-panel text-mut hover:border-edgehi hover:text-fg"
+            onClick={() => setTab("vivo")}
+            className={`px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] not-last:border-r transition-colors ${
+              tab === "vivo" ? "bg-acc/15 text-acc" : "text-mut hover:bg-panel2 hover:text-fg"
             }`}
           >
-            {d.nombre}
+            ping en vivo
           </button>
-        ))}
-        {dispositivos.length === 0 && <span className="font-mono text-xs text-mut">Sin dispositivos.</span>}
-      </div>
-
-      <div className="flex border border-edge">
-        {RANGOS.map((r) => (
           <button
-            key={r.label}
-            onClick={() => setHoras(r.h)}
-            className={`px-3 py-1 font-mono text-xs not-last:border-r transition-colors ${
-              horas === r.h ? "bg-acc/15 text-acc" : "text-mut hover:bg-panel2 hover:text-fg"
+            onClick={() => setTab("dispositivos")}
+            className={`px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
+              tab === "dispositivos" ? "bg-acc/15 text-acc" : "text-mut hover:bg-panel2 hover:text-fg"
             }`}
           >
-            {r.label}
+            dispositivos
           </button>
-        ))}
+        </div>
       </div>
 
-      {error && <p className="font-mono text-xs text-crit">error: {error}</p>}
+      {tab === "dispositivos" ? (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-mut">hasta {MAX_SEL} dispositivos · media de cada nodo</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {dispositivos.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => toggle(d.id)}
+                className={`border px-2.5 py-1 font-mono text-xs transition-colors ${
+                  sel.includes(d.id) ? "border-acc/60 bg-acc/10 text-acc" : "border-edge bg-panel text-mut hover:border-edgehi hover:text-fg"
+                }`}
+              >
+                {d.nombre}
+              </button>
+            ))}
+            {dispositivos.length === 0 && <span className="font-mono text-xs text-mut">Sin dispositivos.</span>}
+          </div>
 
-      <section className="border border-edge bg-panel p-4">
-        {sel.length ? (
-          <div ref={cont} className="w-full overflow-hidden" style={{ height: ALTO }} />
-        ) : (
-          <p className="flex h-[140px] items-center justify-center font-mono text-xs text-mut">
-            selecciona dispositivos arriba para superponer sus curvas
-          </p>
-        )}
-      </section>
+          <div className="flex border border-edge">
+            {RANGOS.map((r) => (
+              <button
+                key={r.label}
+                onClick={() => setHoras(r.h)}
+                className={`px-3 py-1 font-mono text-xs not-last:border-r transition-colors ${
+                  horas === r.h ? "bg-acc/15 text-acc" : "text-mut hover:bg-panel2 hover:text-fg"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          {error && <p className="font-mono text-xs text-crit">error: {error}</p>}
+
+          <section className="border border-edge bg-panel p-4">
+            {sel.length ? (
+              <div ref={cont} className="w-full overflow-hidden" style={{ height: ALTO }} />
+            ) : (
+              <p className="flex h-[140px] items-center justify-center font-mono text-xs text-mut">
+                selecciona dispositivos arriba para superponer sus curvas
+              </p>
+            )}
+          </section>
+        </>
+      ) : (
+        <ComparadorPing />
+      )}
     </div>
   );
 }
