@@ -16,7 +16,7 @@ telemetría por equipo — todo standalone, corriendo en Windows.
 > señal/CCQ/potencial/estaciones sin abrir la web de cada equipo.
 
 
-![inicio](doc/capturas/inicio.png)
+![inicio](doc/capturas/inicio.png?v=2)
 ![dashboard](doc/capturas/dashboard.png)
 ![ficha-equipo](doc/capturas/ficha.png)
 
