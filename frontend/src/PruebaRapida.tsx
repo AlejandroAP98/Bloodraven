@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import type { EquipoRed, Hop } from "./api";
 import { ListadoHops } from "./ListadoHops";
+import { BANNER, LogoTerm, MAPAS } from "./LogoTerm";
 
 type Linea = { t: number; texto: string; ok: boolean };
 
@@ -13,6 +14,7 @@ export function PruebaRapida({
   amplicado = false,
   hostInicial = "",
   autoIniciar = false,
+  banner = false,
 }: {
   /** agrega el host en prueba como dispositivo de seguimiento (abre el formulario precargado) */
   onAgregar?: (host: string, nombre: string | null) => void;
@@ -22,6 +24,8 @@ export function PruebaRapida({
   hostInicial?: string;
   /** arranca el sondeo al montar usando hostInicial */
   autoIniciar?: boolean;
+  /** página de inicio: la consola vacía muestra el banner de la marca en vez del cuervo */
+  banner?: boolean;
 }) {
   const [host, setHost] = useState("");
   const [activo, setActivo] = useState<string | null>(null);
@@ -233,7 +237,16 @@ export function PruebaRapida({
             ref={box}
             className={`term overflow-y-auto border border-edge bg-void p-3 text-acc ${amplicado ? "min-h-0 flex-1" : "h-44"}`}
           >
-            {lineas.length === 0 && <p className="text-dim">▍ ingresa una IP y pulsa iniciar…</p>}
+            {lineas.length === 0 &&
+              (banner ? (
+                <LogoTerm arte={BANNER} tamano={10} mapa={MAPAS.banner}>
+                  <span className="font-mono text-[10px] text-dim">ingresa una IP y pulsa iniciar…</span>
+                </LogoTerm>
+              ) : (
+                <LogoTerm tamano={7}>
+                  <span className="font-mono text-[10px] text-dim">ingresa una IP y pulsa iniciar…</span>
+                </LogoTerm>
+              ))}
             {lineas.map((l) => (
               <p key={l.t} className={l.ok ? "" : "text-crit"}>
                 <span className="text-dim">{new Date(l.t).toLocaleTimeString()}</span> {l.texto}

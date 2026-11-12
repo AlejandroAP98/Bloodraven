@@ -306,6 +306,7 @@ export default function App() {
 
             <div className="mb-3">
               <PruebaRapida
+                banner
                 onAgregar={(h, nombre) =>
                   setForm({
                     abierto: true,

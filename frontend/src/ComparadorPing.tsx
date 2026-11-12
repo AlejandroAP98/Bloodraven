@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "./api";
+import { LOGO, LogoTerm, MAPAS } from "./LogoTerm";
 
 type Muestra = { t: number; ms: number | null; ok: boolean; texto: string };
 
@@ -244,11 +245,16 @@ function SeccionPing({
           <Consola lineas={muestras} alto={alto} />
         )
       ) : (
-        <div
-          style={{ height: alto }}
-          className="flex items-center justify-center font-mono text-[10px] text-dim"
-        >
-          {aviso || (corriendo ? "esperando primeras muestras…" : "escribe una IP y pulsa iniciar")}
+        <div style={{ height: alto }} className="flex items-center justify-center overflow-hidden">
+          <LogoTerm
+            arte={LOGO}
+            tamano={Math.max(5, Math.min(11, Math.floor((alto - 44) / 21)))}
+            mapa={MAPAS.sangre}
+          >
+            <span className={`font-mono text-[10px] ${aviso ? "text-crit" : "text-dim"}`}>
+              {aviso || (corriendo ? "esperando primeras muestras…" : "escribe una IP y pulsa iniciar")}
+            </span>
+          </LogoTerm>
         </div>
       )}
 
