@@ -73,6 +73,21 @@ function FormaCatalogo({
   );
 }
 
+// dado el host de un dispositivo (ip, hostname o url), devuelve la ip solo si es
+// ipv4 parseable; los hostnames se descartan porque no se puede inferir la subred
+function hostAIPv4(host: string): string | null {
+  const h = host.replace(/^https?:\/\//, "").split("/")[0].split(":")[0];
+  const o = h.split(".");
+  return o.length === 4 && o.every((x) => /^\d{1,3}$/.test(x) && +x <= 255) ? h : null;
+}
+
+// enmascara una ipv4 al prefijo dado (via int) y devuelve el cidr de la red
+function redDe(ip: string, prefijo: number): string {
+  const [a, b, c, d] = ip.split(".").map(Number);
+  const n = (((a << 24) | (b << 16) | (c << 8) | d) >>> 0) & (prefijo === 0 ? 0 : (0xffffffff << (32 - prefijo)) >>> 0);
+  return [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".") + `/${prefijo}`;
+}
+
 // conmutador entre las dos listas del descubrimiento: hosts respondiendo y ips disponibles
 function ConmutadorVista({
   vista,
@@ -113,6 +128,7 @@ export function Descubrimiento({
   onVolver: () => void;
 }) {
   const [cidr, setCidr] = useState("");
+  const [prefijo, setPrefijo] = useState(24); // para derivar la red desde ips monitoreadas
   const [vivos, setVivos] = useState<HostVivo[] | null>(null);
   const [libres, setLibres] = useState<HostLibre[] | null>(null);
   const [ocupadas, setOcupadas] = useState<HostSilencioso[]>([]);
@@ -131,6 +147,21 @@ export function Descubrimiento({
       const h = d.host.replace(/^https?:\/\//, "").split("/")[0].split(":")[0];
       return h === ip;
     });
+
+  // atajos de subred derivados de los dispositivos monitoreados, deduplicados por
+  // red: si varios caen en la misma subred, un chip solo con la lista de nombres
+  const atajos = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const d of dispositivos) {
+      const ip = hostAIPv4(d.host);
+      if (!ip) continue;
+      const cidr = redDe(ip, prefijo);
+      const nombres = m.get(cidr) ?? [];
+      if (!nombres.includes(d.nombre)) nombres.push(d.nombre);
+      m.set(cidr, nombres);
+    }
+    return [...m.entries()].map(([cidr, nombres]) => ({ cidr, nombres }));
+  }, [dispositivos, prefijo]);
 
   // etapa 1: barrido ICMP (rápido, con rtt); trae vivos y libres a la vez
   const escanear = async () => {
@@ -230,6 +261,19 @@ export function Descubrimiento({
           spellCheck={false}
           className="inp w-56"
         />
+        <select
+          value={prefijo}
+          onChange={(e) => setPrefijo(+e.target.value)}
+          title="Prefijo usado para derivar la subred a partir de las ips de los dispositivos monitoreados"
+          className="bg-void px-2 py-2 font-mono text-xs text-fg ring-1 ring-edge transition-shadow outline-none focus:ring-acc/60"
+        >
+          {/* /22 es el máximo que admite el backend; hasta /29 para redes chicas */}
+          {Array.from({ length: 8 }, (_, i) => 22 + i).map((p) => (
+            <option key={p} value={p}>
+              /{p}
+            </option>
+          ))}
+        </select>
         <button
           onClick={escanear}
           disabled={escaneando || !cidr}
@@ -248,6 +292,33 @@ export function Descubrimiento({
           </button>
         )}
       </div>
+
+      {atajos.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim">monitoreados:</span>
+          {atajos.map((a) => {
+            const etiquetaNombres =
+              a.nombres.length <= 2
+                ? a.nombres.map((n) => (n.length > 20 ? `${n.slice(0, 19)}…` : n)).join(", ")
+                : `${a.nombres.slice(0, 2).map((n) => (n.length > 14 ? `${n.slice(0, 13)}…` : n)).join(", ")} +${a.nombres.length - 2}`;
+            const activa = cidr.trim() === a.cidr;
+            return (
+              <button
+                key={a.cidr}
+                onClick={() => setCidr(a.cidr)}
+                title={`llenar ${a.cidr} · dispositivos: ${a.nombres.join(", ")}`}
+                className={`border px-2 py-0.5 font-mono text-[10px] transition-colors ${
+                  activa
+                    ? "border-acc/60 bg-acc/15 text-acc"
+                    : "border-edge text-mut hover:border-acc/50 hover:bg-acc/10 hover:text-acc"
+                }`}
+              >
+                {a.cidr} <span className="text-dim">← {etiquetaNombres}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {error && <p className="font-mono text-xs text-crit">error: {error}</p>}
 
