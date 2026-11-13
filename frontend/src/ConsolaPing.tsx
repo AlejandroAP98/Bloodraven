@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { DispOut } from "./api";
-import { LogoTerm } from "./LogoTerm";
+import { LogoTerm, MAPAS } from "./LogoTerm";
 
 type Linea = { t: number; texto: string; ok: boolean };
 
@@ -63,8 +63,8 @@ export function ConsolaPing({ dispositivo }: { dispositivo: DispOut }) {
       </div>
       <div ref={box} className="term h-56 overflow-y-auto border border-edge bg-void p-3 text-acc">
         {lineas.length === 0 && (
-          <LogoTerm tamano={9}>
-            <span className="font-mono text-[10px] text-dim">▍ esperando primeras respuestas…</span>
+          <LogoTerm tamano={6} mapa={MAPAS.sangre}>
+            <span className="font-mono text-[10px] text-dim">esperando primeras respuestas…</span>
           </LogoTerm>
         )}
         {lineas.map((l) => (
